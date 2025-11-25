@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holiday Harmony - Stress Relief App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Nunito', sans-serif; }
+    
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    .pulse-ring {
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .shake-animation {
+      animation: shake 0.5s ease-in-out;
+    }
+    
+    .breathing-circle {
+      transition: transform 4s ease-in-out;
+    }
+    
+    .breathing-inhale { transform: scale(1.3); }
+    .breathing-hold { transform: scale(1.15); }
+    .breathing-exhale { transform: scale(0.7); }
+    
+    .tab-active {
+      color: #d97706;
+      transform: scale(1.1);
+    }
+    
+    .message-bubble-user {
+      border-bottom-right-radius: 4px;
+    }
+    
+    .message-bubble-npc {
+      border-bottom-left-radius: 4px;
+    }
+    
+    /* Hide scrollbar but allow scrolling */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .gradient-border {
+      background: linear-gradient(135deg, #f59e0b, #ea580c, #dc2626);
+      padding: 3px;
+      border-radius: 1rem;
+    }
+    
+    .gradient-border-inner {
+      background: white;
+      border-radius: calc(1rem - 3px);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
+  <div id="app"></div>
+
+  <script>
+    // ============== STATE MANAGEMENT ==============
+    const state = {
+      language: 'en',
+      activeTab: 'home',
+      stressLevel: 35,
+      heartRate: 72,
+      steps: 4832,
+      watchConnected: false,
+      showFakeCall: false,
+      callActive: false,
+      callStartTime: null,
+      selectedTopic: '',
+      selectedStrategy: '',
+      showScripts: false,
+      triggerWords: [],
+      newTriggerWord: '',
+      triggerDetected: false,
+      turkeyMood: 'happy',
+      turkeyMessage: '',
+      turkeySpeaking: false,
+      selectedScenario: '',
+      roleplayActive: false,
+      roleplayMessages: [],
+      userInput: '',
+      breathingActive: false,
+      breathPhase: 'ready',
+      currentAffirmation: 0,
+      reminderTime: '',
+      reminderSet: false
+    };
+
+    // ============== TRANSLATIONS ==============
+    const translations = {
+      en: {
+        appName: 'Holiday Harmony',
+        tagline: 'Peace through the holidays',
+        tabs: { home: 'Home', mediation: 'Mediation', roleplay: 'Role Play', calm: 'Calm Zone', emergency: 'SOS' },
+        greeting: 'Hello',
+        stressLevel: 'Current Stress Level',
+        heartRate: 'Heart Rate',
+        activity: 'Activity',
+        steps: 'steps',
+        lastSync: 'Last sync',
+        connectWatch: 'Connect Smartwatch',
+        connected: 'Connected',
+        triggerAlert: '⚠️ Trigger word detected! Take a breath.',
+        breathe: 'Breathe with me',
+        inhale: 'Inhale...',
+        exhale: 'Exhale...',
+        hold: 'Hold...',
+        ready: 'Start',
+        fakeCall: 'Fake Emergency Call',
+        calling: 'Incoming Call...',
+        callerName: 'Mom',
+        answer: 'Answer',
+        decline: 'Decline',
+        endCall: 'End Call',
+        onCall: 'On call with Mom',
+        mediationTitle: 'Conflict Navigation',
+        topicLabel: 'Hot Topic',
+        selectTopic: 'Select a sensitive topic',
+        topics: {
+          politics: 'Politics & Elections',
+          lifestyle: 'Lifestyle Choices',
+          parenting: 'Parenting Styles',
+          money: 'Money & Success',
+          relationships: 'Relationships',
+          religion: 'Religion & Beliefs'
+        },
+        strategyLabel: 'Your Approach',
+        strategies: {
+          deflect: 'Deflect & Redirect',
+          bridge: 'Build Bridges',
+          boundary: 'Set Boundaries',
+          humor: 'Use Humor',
+          passive: 'Passive Response',
+          assertive: 'Assertive Exit'
+        },
+        getScript: 'Get Response Scripts',
+        triggerWords: 'Trigger Word Detection',
+        triggerWordsDesc: "We'll alert you when these come up",
+        addTrigger: 'Add word...',
+        roleplayTitle: 'Practice Conversations',
+        scenarios: {
+          uncle: 'Political Uncle',
+          diet: 'Diet Critic Aunt',
+          career: 'Career Questioner',
+          relationship: 'Relationship Interrogator'
+        },
+        startRoleplay: 'Start Practice',
+        yourTurn: 'Your response:',
+        send: 'Send',
+        feedback: 'Feedback',
+        tryAgain: 'Try Again',
+        affirmations: 'Daily Affirmations',
+        techniques: 'Stress Relief Techniques',
+        grounding: '5-4-3-2-1 Grounding',
+        progressive: 'Progressive Relaxation',
+        visualization: 'Safe Place Visualization',
+        breathing: 'Box Breathing',
+        startExercise: 'Start',
+        stopExercise: 'Stop',
+        scheduleReminder: 'Schedule Calm Moments',
+        reminderSet: 'Reminder set for',
+        turkeyMessages: {
+          welcome: 'Gobble gobble! Let\'s stay calm together!',
+          stressed: 'I see tension rising. How about a quick breather?',
+          conflict: 'Hot topic ahead! Want some diplomatic phrases?',
+          calm: 'You\'re doing great! Keep that peaceful energy.',
+          trigger: 'Whoa! Sensitive territory. I\'ve got your back!'
+        },
+        passiveResponses: [
+          '"That\'s interesting, I\'ll think about that."',
+          '"Hmm, you might have a point there."',
+          '"I can see why you\'d feel that way."',
+          '"Let\'s enjoy the pie instead, shall we?"'
+        ],
+        assertiveResponses: [
+          '"I appreciate your perspective, but I\'d rather not discuss this today."',
+          '"I\'m going to step away for some fresh air."',
+          '"Let\'s agree to disagree and change the subject."',
+          '"This isn\'t the right time for this conversation."'
+        ],
+        deflectResponses: [
+          '"Speaking of which, have you tried the stuffing?"',
+          '"Oh! That reminds me, did you hear about [cousin\'s news]?"',
+          '"Interesting! Hey, who wants to play a game?"',
+          '"Wow, look at the time! Anyone need a drink refill?"'
+        ],
+        bridgeResponses: [
+          '"I think we both want what\'s best, just see different paths."',
+          '"Tell me more about why this matters to you."',
+          '"I appreciate you sharing. Here\'s how I see it..."',
+          '"We might disagree, but I value our relationship more."'
+        ],
+        boundaryResponses: [
+          '"I\'ve decided not to discuss this topic today."',
+          '"I need you to respect that this is off-limits for me."',
+          '"Let\'s find something we can both enjoy talking about."',
+          '"I\'m going to change the subject now."'
+        ],
+        humorResponses: [
+          '"If I wanted to argue, I\'d fight for the last piece of pie!"',
+          '"Let\'s save the debates for after dessert, deal?"',
+          '"I plead the fifth... helping of mashed potatoes!"',
+          '"My therapist charges $200/hour for this conversation!"'
+        ],
+        escapePhrasesTitle: 'Quick Escape Phrases',
+        escapePhrases: [
+          "I need to check on something in the kitchen.",
+          "Excuse me, I should make a quick call.",
+          "I'm going to get some fresh air.",
+          "I need to help with the dishes.",
+          "Let me refill everyone's drinks!"
+        ],
+        stressAlertHigh: 'High Stress Detected!',
+        stressAlertMod: 'Moderate Stress',
+        stressAlertLow: "You're Doing Great!",
+        currentLevel: 'Current level'
+      },
+      es: {
+        appName: 'Armonía Festiva',
+        tagline: 'Paz durante las fiestas',
+        tabs: { home: 'Inicio', mediation: 'Mediación', roleplay: 'Práctica', calm: 'Calma', emergency: 'SOS' },
+        greeting: 'Hola',
+        stressLevel: 'Nivel de Estrés Actual',
+        heartRate: 'Ritmo Cardíaco',
+        activity: 'Actividad',
+        steps: 'pasos',
+        lastSync: 'Última sincronización',
+        connectWatch: 'Conectar Reloj',
+        connected: 'Conectado',
+        triggerAlert: '⚠️ ¡Palabra sensible detectada! Respira.',
+        breathe: 'Respira conmigo',
+        inhale: 'Inhala...',
+        exhale: 'Exhala...',
+        hold: 'Mantén...',
+        ready: 'Comenzar',
+        fakeCall: 'Llamada de Emergencia Falsa',
+        calling: 'Llamada entrante...',
+        callerName: 'Mamá',
+        answer: 'Contestar',
+        decline: 'Rechazar',
+        endCall: 'Colgar',
+        onCall: 'En llamada con Mamá',
+        mediationTitle: 'Navegación de Conflictos',
+        topicLabel: 'Tema Sensible',
+        selectTopic: 'Selecciona un tema delicado',
+        topics: {
+          politics: 'Política y Elecciones',
+          lifestyle: 'Estilo de Vida',
+          parenting: 'Crianza de Hijos',
+          money: 'Dinero y Éxito',
+          relationships: 'Relaciones',
+          religion: 'Religión y Creencias'
+        },
+        strategyLabel: 'Tu Estrategia',
+        strategies: {
+          deflect: 'Desviar y Redirigir',
+          bridge: 'Construir Puentes',
+          boundary: 'Establecer Límites',
+          humor: 'Usar Humor',
+          passive: 'Respuesta Pasiva',
+          assertive: 'Salida Asertiva'
+        },
+        getScript: 'Obtener Respuestas',
+        triggerWords: 'Detección de Palabras Sensibles',
+        triggerWordsDesc: 'Te alertaremos cuando aparezcan',
+        addTrigger: 'Añadir palabra...',
+        roleplayTitle: 'Practicar Conversaciones',
+        scenarios: {
+          uncle: 'Tío Político',
+          diet: 'Tía Crítica de Dieta',
+          career: 'Cuestionador de Carrera',
+          relationship: 'Interrogador de Relaciones'
+        },
+        startRoleplay: 'Comenzar Práctica',
+        yourTurn: 'Tu respuesta:',
+        send: 'Enviar',
+        feedback: 'Retroalimentación',
+        tryAgain: 'Intentar de Nuevo',
+        affirmations: 'Afirmaciones Diarias',
+        techniques: 'Técnicas de Relajación',
+        grounding: 'Técnica 5-4-3-2-1',
+        progressive: 'Relajación Progresiva',
+        visualization: 'Visualización de Lugar Seguro',
+        breathing: 'Respiración Cuadrada',
+        startExercise: 'Comenzar',
+        stopExercise: 'Detener',
+        scheduleReminder: 'Programar Momentos de Calma',
+        reminderSet: 'Recordatorio programado para',
+        turkeyMessages: {
+          welcome: '¡Glú glú! ¡Mantengamos la calma juntos!',
+          stressed: 'Veo tensión creciente. ¿Un respiro rápido?',
+          conflict: '¡Tema delicado! ¿Quieres frases diplomáticas?',
+          calm: '¡Lo estás haciendo genial! Mantén esa paz.',
+          trigger: '¡Uy! Territorio sensible. ¡Te apoyo!'
+        },
+        passiveResponses: [
+          '"Interesante, lo pensaré."',
+          '"Hmm, puede que tengas razón."',
+          '"Entiendo por qué te sientes así."',
+          '"Mejor disfrutemos el postre, ¿no?"'
+        ],
+        assertiveResponses: [
+          '"Aprecio tu perspectiva, pero prefiero no discutir esto hoy."',
+          '"Voy a salir a tomar aire fresco."',
+          '"Acordemos diferir y cambiemos de tema."',
+          '"Este no es el momento para esta conversación."'
+        ],
+        deflectResponses: [
+          '"Hablando de eso, ¿probaste el pavo?"',
+          '"¡Oh! Eso me recuerda, ¿supiste de [noticias del primo]?"',
+          '"¡Interesante! ¿Quién quiere jugar algo?"',
+          '"¡Wow, qué hora es! ¿Alguien necesita más bebida?"'
+        ],
+        bridgeResponses: [
+          '"Creo que ambos queremos lo mejor, solo vemos caminos diferentes."',
+          '"Cuéntame más sobre por qué esto te importa."',
+          '"Aprecio que compartas. Así es como lo veo yo..."',
+          '"Podemos no estar de acuerdo, pero valoro más nuestra relación."'
+        ],
+        boundaryResponses: [
+          '"He decidido no hablar de este tema hoy."',
+          '"Necesito que respetes que esto está fuera de límites para mí."',
+          '"Busquemos algo de lo que ambos disfrutemos hablar."',
+          '"Voy a cambiar de tema ahora."'
+        ],
+        humorResponses: [
+          '"¡Si quisiera discutir, pelearía por el último pedazo de pastel!"',
+          '"Dejemos los debates para después del postre, ¿vale?"',
+          '"¡Me acojo a la quinta... porción de puré de papas!"',
+          '"¡Mi terapeuta cobra $200/hora por esta conversación!"'
+        ],
+        escapePhrasesTitle: 'Frases de Escape Rápido',
+        escapePhrases: [
+          "Necesito revisar algo en la cocina.",
+          "Disculpa, debo hacer una llamada rápida.",
+          "Voy a tomar aire fresco.",
+          "Necesito ayudar con los platos.",
+          "¡Déjenme rellenar las bebidas de todos!"
+        ],
+        stressAlertHigh: '¡Alto Estrés Detectado!',
+        stressAlertMod: 'Estrés Moderado',
+        stressAlertLow: '¡Lo Estás Haciendo Genial!',
+        currentLevel: 'Nivel actual'
+      },
+      fr: {
+        appName: 'Harmonie des Fêtes',
+        tagline: 'La paix pendant les fêtes',
+        tabs: { home: 'Accueil', mediation: 'Médiation', roleplay: 'Pratique', calm: 'Zen', emergency: 'SOS' },
+        greeting: 'Bonjour',
+        stressLevel: 'Niveau de Stress Actuel',
+        heartRate: 'Rythme Cardiaque',
+        activity: 'Activité',
+        steps: 'pas',
+        lastSync: 'Dernière synchro',
+        connectWatch: 'Connecter Montre',
+        connected: 'Connecté',
+        triggerAlert: '⚠️ Mot sensible détecté! Respirez.',
+        breathe: 'Respirez avec moi',
+        inhale: 'Inspirez...',
+        exhale: 'Expirez...',
+        hold: 'Retenez...',
+        ready: 'Commencer',
+        fakeCall: "Faux Appel d'Urgence",
+        calling: 'Appel entrant...',
+        callerName: 'Maman',
+        answer: 'Répondre',
+        decline: 'Refuser',
+        endCall: 'Raccrocher',
+        onCall: 'En appel avec Maman',
+        mediationTitle: 'Navigation des Conflits',
+        topicLabel: 'Sujet Sensible',
+        selectTopic: 'Choisir un sujet délicat',
+        topics: {
+          politics: 'Politique et Élections',
+          lifestyle: 'Mode de Vie',
+          parenting: 'Éducation des Enfants',
+          money: 'Argent et Succès',
+          relationships: 'Relations',
+          religion: 'Religion et Croyances'
+        },
+        strategyLabel: 'Votre Approche',
+        strategies: {
+          deflect: 'Dévier et Rediriger',
+          bridge: 'Construire des Ponts',
+          boundary: 'Fixer des Limites',
+          humor: "Utiliser l'Humour",
+          passive: 'Réponse Passive',
+          assertive: 'Sortie Assertive'
+        },
+        getScript: 'Obtenir des Réponses',
+        triggerWords: 'Détection de Mots Sensibles',
+        triggerWordsDesc: 'Nous vous alerterons quand ils apparaissent',
+        addTrigger: 'Ajouter un mot...',
+        roleplayTitle: 'Pratiquer les Conversations',
+        scenarios: {
+          uncle: 'Oncle Politique',
+          diet: 'Tante Critique du Régime',
+          career: 'Questionneur de Carrière',
+          relationship: 'Interrogateur de Relations'
+        },
+        startRoleplay: 'Commencer la Pratique',
+        yourTurn: 'Votre réponse:',
+        send: 'Envoyer',
+        feedback: 'Retour',
+        tryAgain: 'Réessayer',
+        affirmations: 'Affirmations Quotidiennes',
+        techniques: 'Techniques de Relaxation',
+        grounding: 'Technique 5-4-3-2-1',
+        progressive: 'Relaxation Progressive',
+        visualization: 'Visualisation Lieu Sûr',
+        breathing: 'Respiration Carrée',
+        startExercise: 'Commencer',
+        stopExercise: 'Arrêter',
+        scheduleReminder: 'Programmer des Moments Zen',
+        reminderSet: 'Rappel programmé pour',
+        turkeyMessages: {
+          welcome: 'Glou glou! Restons calmes ensemble!',
+          stressed: 'Je vois la tension monter. Un petit souffle?',
+          conflict: 'Sujet délicat! Voulez-vous des phrases diplomatiques?',
+          calm: 'Vous êtes super! Gardez cette paix.',
+          trigger: 'Oula! Territoire sensible. Je vous soutiens!'
+        },
+        passiveResponses: [
+          '"C\'est intéressant, j\'y réfléchirai."',
+          '"Hmm, tu as peut-être raison."',
+          '"Je comprends pourquoi tu ressens ça."',
+          '"Profitons plutôt du dessert, d\'accord?"'
+        ],
+        assertiveResponses: [
+          '"J\'apprécie ton point de vue, mais je préfère ne pas en discuter aujourd\'hui."',
+          '"Je vais prendre l\'air un moment."',
+          '"Acceptons de ne pas être d\'accord et changeons de sujet."',
+          '"Ce n\'est pas le bon moment pour cette conversation."'
+        ],
+        deflectResponses: [
+          '"En parlant de ça, as-tu goûté la dinde?"',
+          '"Oh! Ça me rappelle, tu as su pour [nouvelles du cousin]?"',
+          '"Intéressant! Qui veut jouer à un jeu?"',
+          '"Wow, quelle heure! Quelqu\'un veut une autre boisson?"'
+        ],
+        bridgeResponses: [
+          '"Je pense qu\'on veut tous deux le meilleur, on voit juste des chemins différents."',
+          '"Dis-moi pourquoi c\'est important pour toi."',
+          '"J\'apprécie que tu partages. Voici comment je vois les choses..."',
+          '"On peut ne pas être d\'accord, mais je valorise notre relation davantage."'
+        ],
+        boundaryResponses: [
+          '"J\'ai décidé de ne pas discuter de ce sujet aujourd\'hui."',
+          '"J\'ai besoin que tu respectes que c\'est hors limites pour moi."',
+          '"Trouvons quelque chose dont on peut tous deux profiter."',
+          '"Je vais changer de sujet maintenant."'
+        ],
+        humorResponses: [
+          '"Si je voulais me disputer, je me battrais pour la dernière part de tarte!"',
+          '"Gardons les débats pour après le dessert, d\'accord?"',
+          '"J\'invoque le cinquième... service de purée!"',
+          '"Mon psy facture 200€/heure pour cette conversation!"'
+        ],
+        escapePhrasesTitle: "Phrases d'Échappement Rapide",
+        escapePhrases: [
+          "Je dois vérifier quelque chose en cuisine.",
+          "Excusez-moi, je dois passer un appel rapide.",
+          "Je vais prendre l'air.",
+          "Je dois aider avec la vaisselle.",
+          "Laissez-moi remplir les verres de tout le monde!"
+        ],
+        stressAlertHigh: 'Stress Élevé Détecté!',
+        stressAlertMod: 'Stress Modéré',
+        stressAlertLow: 'Vous Êtes Super!',
+        currentLevel: 'Niveau actuel'
+      }
+    };
+
+    // ============== AFFIRMATIONS ==============
+    const affirmationsData = {
+      en: [
+        "I choose peace over conflict today.",
+        "My worth is not defined by others' opinions.",
+        "I can disagree without being disagreeable.",
+        "I release the need to change anyone's mind.",
+        "I am grounded in my own truth.",
+        "This gathering is temporary; my peace is lasting.",
+        "I respond with grace, not reaction.",
+        "I am enough, exactly as I am."
+      ],
+      es: [
+        "Hoy elijo la paz sobre el conflicto.",
+        "Mi valor no lo definen las opiniones de otros.",
+        "Puedo disentir sin ser desagradable.",
+        "Libero la necesidad de cambiar la mente de nadie.",
+        "Estoy arraigado en mi propia verdad.",
+        "Esta reunión es temporal; mi paz es duradera.",
+        "Respondo con gracia, no con reacción.",
+        "Soy suficiente, exactamente como soy."
+      ],
+      fr: [
+        "Je choisis la paix plutôt que le conflit aujourd'hui.",
+        "Ma valeur n'est pas définie par l'opinion des autres.",
+        "Je peux être en désaccord sans être désagréable.",
+        "Je libère le besoin de changer l'avis de quiconque.",
+        "Je suis ancré dans ma propre vérité.",
+        "Cette réunion est temporaire; ma paix est durable.",
+        "Je réponds avec grâce, pas par réaction.",
+        "Je suis suffisant, exactement comme je suis."
+      ]
+    };
+
+    // ============== DEFAULT TRIGGER WORDS ==============
+    const defaultTriggerWords = {
+      en: ['trump', 'biden', 'election', 'vote', 'liberal', 'conservative', 'vaccine', 'mask', 'woke', 'immigrant'],
+      es: ['trump', 'biden', 'elección', 'votar', 'liberal', 'conservador', 'vacuna', 'mascarilla', 'inmigrante'],
+      fr: ['trump', 'biden', 'élection', 'voter', 'libéral', 'conservateur', 'vaccin', 'masque', 'immigrant']
+    };
+
+    // ============== ROLEPLAY SCENARIOS ==============
+    const roleplayScenarios = {
+      en: {
+        uncle: {
+          name: "Uncle Bob",
+          opening: "So I hear you're still supporting that candidate. You know they're going to ruin everything, right?",
+          followUps: [
+            "Oh come on, you can't seriously believe that propaganda!",
+            "When I was your age, we had real values...",
+            "You just don't understand how the real world works."
+          ]
+        },
+        diet: {
+          name: "Aunt Martha",
+          opening: "Oh honey, are you sure you should be eating that? You know, I've been doing this new diet...",
+          followUps: [
+            "I'm just saying, you'd feel so much better if you tried it!",
+            "Back in my day, we didn't have all these food problems.",
+            "I just want what's best for you, you know."
+          ]
+        },
+        career: {
+          name: "Cousin Steve",
+          opening: "So, still doing that... what is it you do again? When are you getting a real job?",
+          followUps: [
+            "But how much do you actually make? I mean, can you even afford a house?",
+            "My friend's kid just became a doctor. Now THAT'S a career.",
+            "You're not getting any younger, you know."
+          ]
+        },
+        relationship: {
+          name: "Grandma Rose",
+          opening: "So dear, when are you going to settle down? You're not getting any younger!",
+          followUps: [
+            "But don't you want to give me great-grandchildren?",
+            "Your cousin just got engaged. She's younger than you, you know.",
+            "I just want to see you happy before I go."
+          ]
+        }
+      },
+      es: {
+        uncle: {
+          name: "Tío Roberto",
+          opening: "Así que escuché que todavía apoyas a ese candidato. Sabes que van a arruinar todo, ¿verdad?",
+          followUps: [
+            "¡Vamos, no puedes creer esa propaganda!",
+            "Cuando yo tenía tu edad, teníamos valores reales...",
+            "Simplemente no entiendes cómo funciona el mundo real."
+          ]
+        },
+        diet: {
+          name: "Tía Marta",
+          opening: "Ay cariño, ¿seguro que deberías comer eso? Sabes, estoy haciendo esta nueva dieta...",
+          followUps: [
+            "¡Solo digo que te sentirías mucho mejor si la probaras!",
+            "En mis tiempos, no teníamos estos problemas con la comida.",
+            "Solo quiero lo mejor para ti, sabes."
+          ]
+        },
+        career: {
+          name: "Primo Esteban",
+          opening: "Entonces, ¿sigues haciendo eso... qué es lo que haces? ¿Cuándo vas a conseguir un trabajo de verdad?",
+          followUps: [
+            "¿Pero cuánto ganas realmente? ¿Puedes comprar una casa?",
+            "El hijo de mi amigo se hizo médico. ESO sí es una carrera.",
+            "Ya no eres tan joven, sabes."
+          ]
+        },
+        relationship: {
+          name: "Abuela Rosa",
+          opening: "Entonces cariño, ¿cuándo vas a sentar cabeza? ¡Ya no eres tan joven!",
+          followUps: [
+            "¿Pero no quieres darme bisnietos?",
+            "Tu prima se acaba de comprometer. Es menor que tú, sabes.",
+            "Solo quiero verte feliz antes de irme."
+          ]
+        }
+      },
+      fr: {
+        uncle: {
+          name: "Oncle Robert",
+          opening: "Alors j'entends que tu soutiens encore ce candidat. Tu sais qu'ils vont tout ruiner, non?",
+          followUps: [
+            "Allez, tu ne peux pas croire cette propagande!",
+            "Quand j'avais ton âge, on avait de vraies valeurs...",
+            "Tu ne comprends pas comment le monde réel fonctionne."
+          ]
+        },
+        diet: {
+          name: "Tante Marthe",
+          opening: "Oh chéri(e), tu es sûr(e) de vouloir manger ça? Tu sais, je fais ce nouveau régime...",
+          followUps: [
+            "Je dis juste que tu te sentirais mieux si tu essayais!",
+            "De mon temps, on n'avait pas ces problèmes alimentaires.",
+            "Je veux juste ce qu'il y a de mieux pour toi."
+          ]
+        },
+        career: {
+          name: "Cousin Stéphane",
+          opening: "Alors, tu fais toujours ce... c'est quoi déjà? Quand vas-tu avoir un vrai travail?",
+          followUps: [
+            "Mais tu gagnes combien vraiment? Tu peux acheter une maison?",
+            "Le fils de mon ami est devenu médecin. ÇA c'est une carrière.",
+            "Tu ne rajeunis pas, tu sais."
+          ]
+        },
+        relationship: {
+          name: "Grand-mère Rose",
+          opening: "Alors chéri(e), quand vas-tu te poser? Tu ne rajeunis pas!",
+          followUps: [
+            "Mais tu ne veux pas me donner des arrière-petits-enfants?",
+            "Ta cousine vient de se fiancer. Elle est plus jeune que toi.",
+            "Je veux juste te voir heureux(se) avant de partir."
+          ]
+        }
+      }
+    };
+
+    // Initialize trigger words
+    state.triggerWords = [...defaultTriggerWords.en];
+
+    // ============== HELPER FUNCTIONS ==============
+    function t() {
+      return translations[state.language];
+    }
+
+    function getFormattedDate() {
+      const now = new Date();
+      const locale = state.language === 'es' ? 'es-ES' : state.language === 'fr' ? 'fr-FR' : 'en-US';
+      return now.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function getFormattedTime() {
+      const now = new Date();
+      const locale = state.language === 'es' ? 'es-ES' : state.language === 'fr' ? 'fr-FR' : 'en-US';
+      return now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getCallDuration() {
+      if (!state.callStartTime) return '00:00';
+      const elapsed = Math.floor((Date.now() - state.callStartTime) / 1000);
+      const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+      const secs = (elapsed % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    // ============== TURKEY MASCOT ==============
+    function renderTurkey(mood = 'happy', small = false) {
+      const size = small ? 'w-16 h-14' : 'w-24 h-20';
+      return `
+        <svg viewBox="0 0 120 100" class="${size}">
+          <!-- Tail feathers -->
+          <ellipse cx="30" cy="50" rx="25" ry="35" fill="#DC2626" />
+          <ellipse cx="35" cy="35" rx="20" ry="30" fill="#EA580C" />
+          <ellipse cx="45" cy="25" rx="18" ry="28" fill="#F59E0B" />
+          <ellipse cx="55" cy="20" rx="15" ry="25" fill="#84CC16" />
+          <ellipse cx="65" cy="25" rx="12" ry="22" fill="#06B6D4" />
+          <!-- Body -->
+          <ellipse cx="70" cy="60" rx="30" ry="25" fill="#92400E" />
+          <!-- Head -->
+          <circle cx="90" cy="45" r="15" fill="#92400E" />
+          <!-- Beak -->
+          <polygon points="105,45 115,48 105,51" fill="#F59E0B" />
+          <!-- Snood -->
+          <ellipse cx="100" cy="55" rx="3" ry="8" fill="#DC2626" />
+          <!-- Eyes -->
+          <circle cx="93" cy="42" r="4" fill="white" />
+          <circle cx="93" cy="42" r="2" fill="black" />
+          <!-- Expression -->
+          <path d="M 88 ${mood === 'alert' ? '50' : '52'} Q 93 ${mood === 'happy' ? '56' : mood === 'concerned' ? '50' : '54'} 98 ${mood === 'alert' ? '50' : '52'}" stroke="#92400E" stroke-width="2" fill="none" />
+          <!-- Feet -->
+          <path d="M 55 82 L 50 95 M 55 82 L 55 95 M 55 82 L 60 95" stroke="#F59E0B" stroke-width="3" fill="none" />
+          <path d="M 75 82 L 70 95 M 75 82 L 75 95 M 75 82 L 80 95" stroke="#F59E0B" stroke-width="3" fill="none" />
+        </svg>
+      `;
+    }
+
+    function turkeySpeak(messageKey, mood = 'happy') {
+      state.turkeyMood = mood;
+      state.turkeyMessage = t().turkeyMessages[messageKey];
+      state.turkeySpeaking = true;
+      render();
+      setTimeout(() => {
+        state.turkeySpeaking = false;
+        render();
+      }, 4000);
+    }
+
+    // ============== TRIGGER WORD DETECTION ==============
+    function checkTriggers(text) {
+      const lowerText = text.toLowerCase();
+      const found = state.triggerWords.some(word => lowerText.includes(word.toLowerCase()));
+      if (found) {
+        state.triggerDetected = true;
+        turkeySpeak('trigger', 'alert');
+        setTimeout(() => {
+          state.triggerDetected = false;
+          render();
+        }, 5000);
+      }
+      return found;
+    }
+
+    // ============== BREATHING EXERCISE ==============
+    let breathingInterval = null;
+
+    function startBreathing() {
+      state.breathingActive = true;
+      state.breathPhase = 'inhale';
+      render();
+      
+      const phases = ['inhale', 'hold', 'exhale', 'hold'];
+      let phaseIndex = 0;
+      
+      breathingInterval = setInterval(() => {
+        phaseIndex = (phaseIndex + 1) % 4;
+        state.breathPhase = phases[phaseIndex];
+        render();
+      }, 4000);
+    }
+
+    function stopBreathing() {
+      state.breathingActive = false;
+      state.breathPhase = 'ready';
+      if (breathingInterval) {
+        clearInterval(breathingInterval);
+        breathingInterval = null;
+      }
+      render();
+    }
+
+    // ============== SMARTWATCH SIMULATION ==============
+    let watchInterval = null;
+
+    function connectWatch() {
+      state.watchConnected = true;
+      watchInterval = setInterval(() => {
+        state.heartRate = Math.min(120, Math.max(60, state.heartRate + Math.floor(Math.random() * 10) - 5));
+        state.steps += Math.floor(Math.random() * 10);
+        if (state.heartRate > 90) {
+          state.stressLevel = Math.min(100, state.stressLevel + 3);
+          if (state.stressLevel > 70 && !state.turkeySpeaking) {
+            turkeySpeak('stressed', 'concerned');
+          }
+        }
+        render();
+      }, 3000);
+      render();
+    }
+
+    function disconnectWatch() {
+      state.watchConnected = false;
+      if (watchInterval) {
+        clearInterval(watchInterval);
+        watchInterval = null;
+      }
+      render();
+    }
+
+    // ============== FAKE CALL ==============
+    let callTimer = null;
+
+    function triggerFakeCall() {
+      state.showFakeCall = true;
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+      render();
+    }
+
+    function answerCall() {
+      state.showFakeCall = false;
+      state.callActive = true;
+      state.callStartTime = Date.now();
+      callTimer = setInterval(() => render(), 1000);
+      render();
+    }
+
+    function endCall() {
+      state.callActive = false;
+      state.callStartTime = null;
+      if (callTimer) {
+        clearInterval(callTimer);
+        callTimer = null;
+      }
+      render();
+    }
+
+    function declineCall() {
+      state.showFakeCall = false;
+      render();
+    }
+
+    // ============== ROLEPLAY ==============
+    function startRoleplay(scenario) {
+      state.selectedScenario = scenario;
+      state.roleplayActive = true;
+      const scenarioData = roleplayScenarios[state.language][scenario];
+      state.roleplayMessages = [{ sender: 'npc', text: scenarioData.opening, name: scenarioData.name }];
+      render();
+    }
+
+    function sendRoleplayMessage() {
+      if (!state.userInput.trim()) return;
+      checkTriggers(state.userInput);
+      
+      state.roleplayMessages.push({ sender: 'user', text: state.userInput });
+      const input = state.userInput;
+      state.userInput = '';
+      render();
+      
+      setTimeout(() => {
+        const scenarioData = roleplayScenarios[state.language][state.selectedScenario];
+        const npcCount = state.roleplayMessages.filter(m => m.sender === 'npc').length;
+        const responseIndex = Math.min(npcCount, scenarioData.followUps.length - 1);
+        state.roleplayMessages.push({ 
+          sender: 'npc', 
+          text: scenarioData.followUps[responseIndex],
+          name: scenarioData.name
+        });
+        render();
+        
+        // Scroll to bottom
+        const chatContainer = document.getElementById('roleplay-chat');
+        if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 1500);
+    }
+
+    function exitRoleplay() {
+      state.roleplayActive = false;
+      state.roleplayMessages = [];
+      state.selectedScenario = '';
+      render();
+    }
+
+    // ============== TRIGGER WORDS MANAGEMENT ==============
+    function addTriggerWord() {
+      const word = state.newTriggerWord.trim().toLowerCase();
+      if (word && !state.triggerWords.includes(word)) {
+        state.triggerWords.push(word);
+        state.newTriggerWord = '';
+        render();
+      }
+    }
+
+    function removeTriggerWord(word) {
+      state.triggerWords = state.triggerWords.filter(w => w !== word);
+      render();
+    }
+
+    // ============== RENDER FUNCTIONS ==============
+    function renderFakeCallOverlay() {
+      if (!state.showFakeCall) return '';
+      return `
+        <div class="fixed inset-0 bg-gradient-to-b from-green-800 to-green-900 z-50 flex flex-col items-center justify-center p-8">
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="w-40 h-40 rounded-full bg-green-600 opacity-30 pulse-ring"></div>
+          </div>
+          <div class="w-28 h-28 rounded-full bg-green-600 flex items-center justify-center mb-6 shadow-2xl z-10 float-animation">
+            <span class="text-6xl">📞</span>
+          </div>
+          <p class="text-green-100 text-lg mb-2">${t().calling}</p>
+          <p class="text-white text-4xl font-bold mb-10">${t().callerName}</p>
+          <div class="flex gap-8">
+            <div class="flex flex-col items-center">
+              <button onclick="declineCall()" class="w-18 h-18 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition transform hover:scale-105 active:scale-95 p-5">
+                <span class="text-3xl">✕</span>
+              </button>
+              <span class="text-white text-sm mt-2">${t().decline}</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <button onclick="answerCall()" class="w-18 h-18 rounded-full bg-green-500 flex items-center justify-center shadow-lg hover:bg-green-400 transition transform hover:scale-105 active:scale-95 float-animation p-5">
+                <span class="text-3xl">📞</span>
+              </button>
+              <span class="text-white text-sm mt-2">${t().answer}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCallBanner() {
+      if (!state.callActive) return '';
+      return `
+        <div class="fixed top-0 left-0 right-0 bg-green-600 text-white py-3 px-4 flex items-center justify-between z-40 shadow-lg">
+          <div class="flex items-center gap-3">
+            <span class="animate-pulse text-red-300">●</span>
+            <span class="font-medium">${t().onCall}</span>
+            <span class="text-green-200 font-mono">${getCallDuration()}</span>
+          </div>
+          <button onclick="endCall()" class="bg-red-500 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-red-600 transition">
+            ${t().endCall}
+          </button>
+        </div>
+      `;
+    }
+
+    function renderTriggerAlert() {
+      if (!state.triggerDetected) return '';
+      return `
+        <div class="fixed top-4 left-4 right-4 bg-amber-100 border-2 border-amber-400 rounded-xl p-4 z-30 shadow-lg shake-animation">
+          <p class="text-amber-800 font-medium text-center">${t().triggerAlert}</p>
+        </div>
+      `;
+    }
+
+    function renderHeader() {
+      const marginTop = state.callActive ? 'mt-14' : '';
+      return `
+        <header class="bg-gradient-to-r from-amber-600 via-orange-500 to-red-500 text-white p-4 shadow-lg ${marginTop}">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-3">
+              <div class="relative flex flex-col items-center">
+                ${state.turkeySpeaking && state.turkeyMessage ? `
+                  <div class="absolute -top-16 bg-amber-50 border-2 border-amber-400 rounded-2xl px-3 py-2 max-w-[200px] text-center shadow-lg float-animation z-10">
+                    <p class="text-amber-900 text-xs font-medium">${state.turkeyMessage}</p>
+                    <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
+                      <div class="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-amber-400"></div>
+                    </div>
+                  </div>
+                ` : ''}
+                ${renderTurkey(state.turkeyMood)}
+              </div>
+              <div>
+                <h1 class="text-2xl font-extrabold tracking-tight">${t().appName}</h1>
+                <p class="text-amber-100 text-sm">${t().tagline}</p>
+              </div>
+            </div>
+            <div class="flex gap-1">
+              ${['en', 'es', 'fr'].map(lang => `
+                <button onclick="changeLanguage('${lang}')" class="px-3 py-1 rounded-full text-sm font-semibold transition ${
+                  state.language === lang ? 'bg-white text-amber-600' : 'bg-amber-700/50 text-white hover:bg-amber-700'
+                }">
+                  ${lang.toUpperCase()}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          <p class="text-amber-100 text-sm text-center">${getFormattedDate()} • ${getFormattedTime()}</p>
+        </header>
+      `;
+    }
+
+    function renderHomeTab() {
+      return `
+        <div class="space-y-4">
+          <!-- Smartwatch Connection -->
+          <div class="bg-white rounded-2xl p-4 shadow-md border border-amber-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-gray-800">⌚ ${t().connectWatch}</h3>
+              <button onclick="${state.watchConnected ? 'disconnectWatch()' : 'connectWatch()'}" class="px-4 py-2 rounded-full text-sm font-semibold transition ${
+                state.watchConnected 
+                  ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }">
+                ${state.watchConnected ? `✓ ${t().connected}` : t().connectWatch}
+              </button>
+            </div>
+            ${state.watchConnected ? `
+              <div class="grid grid-cols-3 gap-3 mt-3">
+                <div class="bg-red-50 rounded-xl p-3 text-center border border-red-100">
+                  <p class="text-2xl font-extrabold text-red-600">${state.heartRate}</p>
+                  <p class="text-xs text-red-400 font-medium">${t().heartRate}</p>
+                </div>
+                <div class="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+                  <p class="text-2xl font-extrabold text-blue-600">${state.steps.toLocaleString()}</p>
+                  <p class="text-xs text-blue-400 font-medium">${t().steps}</p>
+                </div>
+                <div class="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                  <p class="text-2xl font-extrabold text-amber-600">${state.stressLevel}%</p>
+                  <p class="text-xs text-amber-400 font-medium">${t().stressLevel}</p>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Stress Level Gauge -->
+          <div class="bg-white rounded-2xl p-4 shadow-md border border-amber-100">
+            <h3 class="font-bold text-gray-800 mb-3">${t().stressLevel}</h3>
+            <div class="relative h-5 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500 ${
+                state.stressLevel < 40 ? 'bg-gradient-to-r from-green-400 to-green-500' : 
+                state.stressLevel < 70 ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 
+                'bg-gradient-to-r from-red-400 to-red-500'
+              }" style="width: ${state.stressLevel}%"></div>
+            </div>
+            <input type="range" min="0" max="100" value="${state.stressLevel}" 
+              onchange="state.stressLevel = parseInt(this.value); render()" 
+              class="w-full mt-3 accent-amber-500 cursor-pointer">
+          </div>
+
+          <!-- Quick Affirmation -->
+          <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-5 shadow-md border border-purple-200">
+            <h3 class="font-bold text-purple-800 mb-3">✨ ${t().affirmations}</h3>
+            <p class="text-purple-700 italic text-lg leading-relaxed">"${affirmationsData[state.language][state.currentAffirmation]}"</p>
+            <button onclick="state.currentAffirmation = (state.currentAffirmation + 1) % affirmationsData['${state.language}'].length; render()" 
+              class="mt-4 text-purple-600 text-sm hover:text-purple-800 transition font-semibold">
+              → Next affirmation
+            </button>
+          </div>
+
+          <!-- Schedule Reminder -->
+          <div class="bg-white rounded-2xl p-4 shadow-md border border-amber-100">
+            <h3 class="font-bold text-gray-800 mb-3">🔔 ${t().scheduleReminder}</h3>
+            <div class="flex gap-2">
+              <input type="time" value="${state.reminderTime}" 
+                onchange="state.reminderTime = this.value" 
+                class="flex-1 border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-amber-400 focus:outline-none">
+              <button onclick="if(state.reminderTime) { state.reminderSet = true; render(); setTimeout(() => { state.reminderSet = false; render(); }, 3000); }" 
+                class="bg-amber-500 text-white px-5 py-2 rounded-xl font-semibold hover:bg-amber-600 transition">
+                Set
+              </button>
+            </div>
+            ${state.reminderSet ? `<p class="text-green-600 text-sm mt-2 font-medium">✓ ${t().reminderSet} ${state.reminderTime}</p>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMediationTab() {
+      const getResponses = () => {
+        switch(state.selectedStrategy) {
+          case 'passive': return t().passiveResponses;
+          case 'assertive': return t().assertiveResponses;
+          case 'deflect': return t().deflectResponses;
+          case 'bridge': return t().bridgeResponses;
+          case 'boundary': return t().boundaryResponses;
+          case 'humor': return t().humorResponses;
+          default: return t().deflectResponses;
+        }
+      };
+
+      const getStrategyEmoji = () => {
+        switch(state.selectedStrategy) {
+          case 'passive': return '😌';
+          case 'assertive': return '💪';
+          case 'deflect': return '🔄';
+          case 'bridge': return '🌉';
+          case 'boundary': return '🚧';
+          case 'humor': return '😄';
+          default: return '💬';
+        }
+      };
+
+      return `
+        <div class="space-y-4">
+          <div class="bg-white rounded-2xl p-5 shadow-md border border-amber-100">
+            <h3 class="font-extrabold text-xl text-gray-800 mb-4">🕊️ ${t().mediationTitle}</h3>
+            
+            <!-- Topic Selection -->
+            <div class="mb-4">
+              <label class="block text-sm font-semibold text-gray-600 mb-2">${t().topicLabel}</label>
+              <select onchange="state.selectedTopic = this.value; state.showScripts = false; render()" 
+                class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white focus:border-amber-400 focus:outline-none font-medium">
+                <option value="">${t().selectTopic}</option>
+                ${Object.entries(t().topics).map(([key, value]) => `
+                  <option value="${key}" ${state.selectedTopic === key ? 'selected' : ''}>${value}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Strategy Selection -->
+            <div class="mb-4">
+              <label class="block text-sm font-semibold text-gray-600 mb-2">${t().strategyLabel}</label>
+              <div class="grid grid-cols-2 gap-2">
+                ${Object.entries(t().strategies).map(([key, value]) => `
+                  <button onclick="state.selectedStrategy = '${key}'; state.showScripts = false; render()" 
+                    class="p-3 rounded-xl text-sm font-semibold transition ${
+                      state.selectedStrategy === key
+                        ? 'bg-amber-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }">
+                    ${value}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Get Scripts Button -->
+            <button onclick="state.showScripts = true; render()" 
+              ${!state.selectedTopic || !state.selectedStrategy ? 'disabled' : ''}
+              class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:from-amber-600 hover:to-orange-600 transition shadow-md">
+              ${t().getScript}
+            </button>
+
+            <!-- Response Scripts -->
+            ${state.showScripts && state.selectedStrategy ? `
+              <div class="mt-4 p-4 bg-amber-50 rounded-xl border-2 border-amber-200">
+                <h4 class="font-bold text-amber-800 mb-3 text-lg">
+                  ${getStrategyEmoji()} ${t().strategies[state.selectedStrategy]}
+                </h4>
+                <ul class="space-y-2">
+                  ${getResponses().map((response, i) => `
+                    <li class="bg-white p-3 rounded-lg text-gray-700 text-sm shadow-sm border border-amber-100">
+                      ${response}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Trigger Words -->
+          <div class="bg-white rounded-2xl p-4 shadow-md border border-amber-100">
+            <h3 class="font-bold text-gray-800 mb-1">🚨 ${t().triggerWords}</h3>
+            <p class="text-sm text-gray-500 mb-3">${t().triggerWordsDesc}</p>
+            <div class="flex flex-wrap gap-2 mb-3">
+              ${state.triggerWords.map(word => `
+                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 border border-red-200">
+                  ${word}
+                  <button onclick="removeTriggerWord('${word}')" class="hover:text-red-900 font-bold">×</button>
+                </span>
+              `).join('')}
+            </div>
+            <div class="flex gap-2">
+              <input type="text" value="${state.newTriggerWord}" 
+                onchange="state.newTriggerWord = this.value"
+                onkeydown="if(event.key === 'Enter') addTriggerWord()"
+                placeholder="${t().addTrigger}"
+                class="flex-1 border-2 border-gray-200 rounded-xl px-4 py-2 text-sm focus:border-red-400 focus:outline-none">
+              <button onclick="addTriggerWord()" 
+                class="bg-red-500 text-white px-4 py-2 rounded-xl font-bold hover:bg-red-600 transition">
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRoleplayTab() {
+      if (!state.roleplayActive) {
+        return `
+          <div class="bg-white rounded-2xl p-5 shadow-md border border-amber-100">
+            <h3 class="font-extrabold text-xl text-gray-800 mb-4">🎭 ${t().roleplayTitle}</h3>
+            <div class="grid grid-cols-2 gap-3">
+              ${Object.entries(t().scenarios).map(([key, value]) => `
+                <button onclick="startRoleplay('${key}')" 
+                  class="bg-gradient-to-br from-amber-100 to-orange-100 p-4 rounded-xl text-left hover:from-amber-200 hover:to-orange-200 transition border-2 border-amber-200 hover:border-amber-300">
+                  <span class="text-3xl mb-2 block">
+                    ${key === 'uncle' ? '👴' : key === 'diet' ? '👩‍🦳' : key === 'career' ? '🧑' : '👵'}
+                  </span>
+                  <span class="font-bold text-gray-800">${value}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="bg-white rounded-2xl shadow-md border border-amber-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-3 flex items-center justify-between">
+            <span class="text-white font-bold">${t().scenarios[state.selectedScenario]}</span>
+            <button onclick="exitRoleplay()" class="text-white hover:text-amber-200 text-xl font-bold">✕</button>
+          </div>
+          <div id="roleplay-chat" class="h-80 overflow-y-auto p-4 space-y-3 bg-gray-50 hide-scrollbar">
+            ${state.roleplayMessages.map(msg => `
+              <div class="flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[80%] p-3 rounded-2xl ${
+                  msg.sender === 'user' 
+                    ? 'bg-amber-500 text-white message-bubble-user' 
+                    : 'bg-white border-2 border-gray-200 message-bubble-npc shadow-sm'
+                }">
+                  ${msg.sender === 'npc' ? `<p class="text-xs text-amber-600 font-bold mb-1">${msg.name}</p>` : ''}
+                  <p class="text-sm">${msg.text}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="p-3 border-t-2 border-gray-200 bg-white">
+            <div class="flex gap-2">
+              <input type="text" id="roleplay-input" value="${state.userInput}" 
+                onchange="state.userInput = this.value"
+                onkeydown="if(event.key === 'Enter') sendRoleplayMessage()"
+                placeholder="${t().yourTurn}"
+                class="flex-1 border-2 border-gray-200 rounded-full px-4 py-2 text-sm focus:border-amber-400 focus:outline-none">
+              <button onclick="sendRoleplayMessage()" 
+                class="bg-amber-500 text-white px-5 py-2 rounded-full font-semibold hover:bg-amber-600 transition">
+                ${t().send}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCalmTab() {
+      const breathClass = state.breathingActive ? 
+        (state.breathPhase === 'inhale' ? 'breathing-inhale' : 
+         state.breathPhase === 'exhale' ? 'breathing-exhale' : 'breathing-hold') : '';
+
+      const breathText = state.breathingActive ?
+        (state.breathPhase === 'inhale' ? t().inhale : 
+         state.breathPhase === 'exhale' ? t().exhale : t().hold) : t().ready;
+
+      return `
+        <div class="space-y-4">
+          <!-- Breathing Exercise -->
+          <div class="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-6 shadow-md border-2 border-blue-200 text-center">
+            <h3 class="font-extrabold text-xl text-blue-800 mb-4">🫁 ${t().breathe}</h3>
+            <div class="w-36 h-36 mx-auto rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center mb-5 shadow-lg breathing-circle ${breathClass}">
+              <span class="text-white font-bold text-lg">${breathText}</span>
+            </div>
+            <button onclick="${state.breathingActive ? 'stopBreathing()' : 'startBreathing()'}" 
+              class="px-8 py-3 rounded-full font-bold transition shadow-md ${
+                state.breathingActive 
+                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }">
+              ${state.breathingActive ? t().stopExercise : t().startExercise}
+            </button>
+          </div>
+
+          <!-- Stress Relief Techniques -->
+          <div class="bg-white rounded-2xl p-4 shadow-md border border-amber-100">
+            <h3 class="font-bold text-lg text-gray-800 mb-3">🧘 ${t().techniques}</h3>
+            <div class="space-y-2">
+              ${[
+                { key: 'grounding', icon: '🖐️', desc: t().grounding },
+                { key: 'progressive', icon: '💆', desc: t().progressive },
+                { key: 'visualization', icon: '🏝️', desc: t().visualization },
+                { key: 'breathing', icon: '📦', desc: t().breathing }
+              ].map(technique => `
+                <button class="w-full bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl text-left hover:from-green-100 hover:to-emerald-100 transition border-2 border-green-200 flex items-center gap-3">
+                  <span class="text-2xl">${technique.icon}</span>
+                  <span class="font-semibold text-gray-800">${technique.desc}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Affirmations Carousel -->
+          <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-4 shadow-md border-2 border-purple-200">
+            <h3 class="font-bold text-lg text-purple-800 mb-3">✨ ${t().affirmations}</h3>
+            <div class="bg-white rounded-xl p-4 shadow-inner">
+              <p class="text-purple-700 italic text-center text-lg leading-relaxed">
+                "${affirmationsData[state.language][state.currentAffirmation]}"
+              </p>
+            </div>
+            <div class="flex justify-center gap-2 mt-3">
+              ${affirmationsData[state.language].map((_, i) => `
+                <button onclick="state.currentAffirmation = ${i}; render()" 
+                  class="w-2.5 h-2.5 rounded-full transition ${
+                    i === state.currentAffirmation ? 'bg-purple-500' : 'bg-purple-200 hover:bg-purple-300'
+                  }"></button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderEmergencyTab() {
+      const stressText = state.stressLevel > 70 ? t().stressAlertHigh : 
+                         state.stressLevel > 40 ? t().stressAlertMod : t().stressAlertLow;
+
+      return `
+        <div class="space-y-4">
+          <!-- Fake Call Button -->
+          <div class="bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl p-6 shadow-lg text-center">
+            <h3 class="font-extrabold text-2xl text-white mb-2">🆘 ${t().fakeCall}</h3>
+            <p class="text-red-100 text-sm mb-6">Need an excuse to step away? We've got you!</p>
+            <div class="relative inline-block">
+              <div class="absolute inset-0 rounded-full bg-white opacity-30 pulse-ring"></div>
+              <button onclick="triggerFakeCall()" 
+                class="relative w-32 h-32 rounded-full bg-white shadow-2xl flex items-center justify-center mx-auto hover:scale-105 transition transform active:scale-95">
+                <span class="text-6xl">📞</span>
+              </button>
+            </div>
+            <p class="text-red-100 text-sm mt-6">Tap for an "emergency" call from ${t().callerName}</p>
+          </div>
+
+          <!-- Quick Escape Phrases -->
+          <div class="bg-white rounded-2xl p-4 shadow-md border border-amber-100">
+            <h3 class="font-bold text-lg text-gray-800 mb-3">🚪 ${t().escapePhrasesTitle}</h3>
+            <div class="space-y-2">
+              ${t().escapePhrases.map((phrase, i) => `
+                <div class="bg-gray-50 p-3 rounded-xl text-gray-700 text-sm border-2 border-gray-200 hover:border-amber-300 transition cursor-pointer">
+                  ${phrase}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Stress Level Alert -->
+          <div class="bg-amber-50 rounded-2xl p-4 border-2 border-amber-300">
+            <div class="flex items-center gap-3 mb-2">
+              ${renderTurkey(state.stressLevel > 70 ? 'alert' : 'calm', true)}
+              <div>
+                <p class="font-bold text-amber-800 text-lg">${stressText}</p>
+                <p class="text-sm text-amber-600">${t().currentLevel}: ${state.stressLevel}%</p>
+              </div>
+            </div>
+            ${state.stressLevel > 70 ? `
+              <button onclick="state.activeTab = 'calm'; startBreathing(); render()" 
+                class="w-full bg-amber-500 text-white py-2.5 rounded-xl mt-2 font-bold hover:bg-amber-600 transition">
+                Start Breathing Exercise →
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNavigation() {
+      const tabs = [
+        { id: 'home', icon: '🏠', label: t().tabs.home },
+        { id: 'mediation', icon: '🕊️', label: t().tabs.mediation },
+        { id: 'roleplay', icon: '🎭', label: t().tabs.roleplay },
+        { id: 'calm', icon: '🧘', label: t().tabs.calm },
+        { id: 'emergency', icon: '🆘', label: t().tabs.emergency }
+      ];
+
+      return `
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
+          <div class="flex justify-around max-w-lg mx-auto">
+            ${tabs.map(tab => `
+              <button onclick="state.activeTab = '${tab.id}'; render()" 
+                class="flex flex-col items-center py-2 px-3 transition ${
+                  state.activeTab === tab.id ? 'tab-active' : 'text-gray-500 hover:text-gray-700'
+                }">
+                <span class="text-xl mb-1">${tab.icon}</span>
+                <span class="text-xs font-semibold">${tab.label}</span>
+                ${state.activeTab === tab.id ? '<div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1"></div>' : ''}
+              </button>
+            `).join('')}
+          </div>
+        </nav>
+      `;
+    }
+
+    function render() {
+      let tabContent = '';
+      switch(state.activeTab) {
+        case 'home': tabContent = renderHomeTab(); break;
+        case 'mediation': tabContent = renderMediationTab(); break;
+        case 'roleplay': tabContent = renderRoleplayTab(); break;
+        case 'calm': tabContent = renderCalmTab(); break;
+        case 'emergency': tabContent = renderEmergencyTab(); break;
+      }
+
+      document.getElementById('app').innerHTML = `
+        ${renderFakeCallOverlay()}
+        ${renderCallBanner()}
+        ${renderTriggerAlert()}
+        ${renderHeader()}
+        <main class="p-4 pb-24 max-w-lg mx-auto">
+          ${tabContent}
+        </main>
+        ${renderNavigation()}
+      `;
+    }
+
+    function changeLanguage(lang) {
+      state.language = lang;
+      state.triggerWords = [...defaultTriggerWords[lang]];
+      state.showScripts = false;
+      render();
+    }
+
+    // Initial render
+    render();
+
+    // Welcome message after a short delay
+    setTimeout(() => turkeySpeak('welcome', 'happy'), 1000);
+
+    // Update time every minute
+    setInterval(() => {
+      if (!state.showFakeCall && !state.callActive) {
+        render();
+      }
+    }, 60000);
+  </script>
+</body>
+</html>
